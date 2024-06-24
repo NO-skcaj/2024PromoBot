@@ -1,0 +1,42 @@
+#include "subsystems/Differential.hpp"
+
+Differential::Differential(hardware::gyro::navx* gyro)
+{   
+    this->Gyro = gyro;
+
+    this->d_leftMotor.AddMotor(drive::LEFT_CAN, hardware::motors::motor_type::DRIVE);
+    this->d_rightMotor.AddMotor(drive::LEFT_CAN, hardware::motors::motor_type::DRIVE);
+
+    this->d_leftMotor.Config(drive::DRIVE_P, 
+                             drive::DRIVE_I, 
+                             drive::DRIVE_D, 
+                             drive::DRIVE_AMPERAGE);
+
+    this->d_rightMotor.Config(drive::DRIVE_P, 
+                              drive::DRIVE_I, 
+                              drive::DRIVE_D, 
+                              drive::DRIVE_AMPERAGE);
+
+    this->PoseEstimator.ResetPosition(
+        this->Gyro->getRotation2d(), 
+        units::meter_t{this->d_leftMotor.GetMotorPosition() / 360 * drive::INCH_PER_ROTATION}, 
+        units::meter_t{this->d_rightMotor.GetMotorPosition() / 360 * drive::INCH_PER_ROTATION}, 
+        this->PoseEstimator.GetEstimatedPosition()
+    );
+}
+
+void Differential::Drive(double y, double x)
+{
+    this->driveController.ArcadeDrive(y, x);
+}
+
+void Differential::Periodic()
+{
+    this->PoseEstimator.Update(
+        this->Gyro->getRotation2d(),
+        units::meter_t{this->d_leftMotor.GetMotorPosition() / 360 * drive::INCH_PER_ROTATION}, 
+        units::meter_t{this->d_rightMotor.GetMotorPosition() / 360 * drive::INCH_PER_ROTATION}
+    );
+
+    frc::SmartDashboard::PutData("Differential Drive", &driveController);
+}

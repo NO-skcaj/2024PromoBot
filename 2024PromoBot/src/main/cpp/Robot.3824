@@ -1,0 +1,44 @@
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+
+#include <frc/Joystick.h>
+#include <frc/TimedRobot.h>
+
+#include "subsystems/Differential.hpp"
+#include "utils/hardware.hpp"
+
+/**
+ * This is a demo program showing the use of the DifferentialDrive class.
+ * Runs the motors with arcade steering.
+ */
+class Robot : public frc::TimedRobot {
+  frc::Joystick m_stick{0};
+
+ public:
+
+  void RobotInit() override {
+
+  }
+
+  void RobotPeriodic() override
+  {
+    this->DriveTrain.Periodic();
+  }
+
+  void TeleopPeriodic() override 
+  {
+    this->DriveTrain.Drive(-m_stick.GetY(), -m_stick.GetX());
+  }
+
+  private:
+    hardware::gyro::navx gyro;
+
+    Differential DriveTrain{&gyro};
+};
+
+#ifndef RUNNING_FRC_TESTS
+int main() {
+  return frc::StartRobot<Robot>();
+}
+#endif
