@@ -86,85 +86,103 @@ namespace hardware {
     };
 
 
-    // // I hate REV I HATE REV I HATE REV
-    // class CANSparkMax : public motors::baseMotor
-    // {
-    //   public:
-    //     CANSparkMax(int CAN, motor_type Mode)
-    //     { 
-    //       this->mode = Mode;
-    //       rev::CANSparkMax& temp{CAN, rev::CANSparkLowLevel::MotorType::kBrushless};
-    //       this->motor = temp;
-    //     };
+    // I hate REV I HATE REV I HATE REV
+    class CANSparkMax : public motors::baseMotor
+    {
+      public:
+        CANSparkMax() {};
 
-    //     // needs to be called with or without CAN id, just dont put in the argument
-    //     void GetEncoder(int CAN = 999)  
-    //     {
-    //       // Get real relative encoders
-    //       this->encoder = new rev::SparkRelativeEncoder(this->motor->GetEncoder());
-    //       if (CAN != 999)
-    //       {
-    //         this->AbsEncoder = ctre::phoenix6::hardware::CANcoder{CAN, "rio"}
-    //         this->AbsEncoder->ConfigAbsoluteSensorRange(ctre::ph ::phoenix::sensors::AbsoluteSensorRange::Signed_PlusMinus180);
-    //       }
-    //     };
-    //     // Configs
-    //     void Config(float P, float I, float D, int max_amperage)  
-    //     {
-    //       // Set current limit
-    //       this->motor->SetSmartCurrentLimit(max_amperage);
+        CANSparkMax(int CAN, motor_type Mode)
+        { 
+          this->mode = Mode;
+          this->motor = std::make_unique<rev::CANSparkMax>(CAN, rev::CANSparkLowLevel::MotorType::kBrushless);
+        };
 
-    //       // Turn on brake coast mode, snappier
-    //       this->motor->SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
+        CANSparkMax(int CAN, motor_type Mode, bool brushed)
+        { 
+          this->mode = Mode;
+          this->motor = std::make_unique<rev::CANSparkMax>(CAN, brushed ? rev::CANSparkLowLevel::MotorType::kBrushed : rev::CANSparkLowLevel::MotorType::kBrushless);
+        };
 
-    //       // Swerve wheel PID contrllers
-    //       this->PIDController = new SparkPIDController(this->motor->GetPIDController());
-    //       this->PIDController->SetP(P);
-    //       this->PIDController->SetI(I);
-    //       this->PIDController->SetD(D);
+        void AddMotor(int CAN, motor_type Mode)
+        { 
+          this->mode = Mode;
+          this->motor = std::make_unique<rev::CANSparkMax>(CAN, rev::CANSparkLowLevel::MotorType::kBrushless);
+        };
 
-    //       // Burn flash everytime
-    //       this->motor->BurnFlash();
-    //     };
+        void AddMotor(int CAN, motor_type Mode, bool brushed)
+        { 
+          this->mode = Mode;
+          this->motor = std::make_unique<rev::CANSparkMax>(CAN, brushed ? rev::CANSparkLowLevel::MotorType::kBrushed : rev::CANSparkLowLevel::MotorType::kBrushless);
+        };
 
-    //     // Multi-purpose, Angle/Drive
-    //     void Set(double input)  
-    //     {
-    //       switch (mode)
-    //       {
-    //         case DRIVE:
-    //           this->motor->Set(input);
-    //         case ANGLE:
-    //           this->PIDController->SetReference(input * 21);
-    //       }
-    //     };
-    //     //
-    //     void SnapZero()
-    //     {
-    //       // get pos from encoder, conv to deg, conv to encoder rotations
-    //       this->encoder->SetPosition((AbsEncoder->GetAbsolutePosition() / 360 * 21));
-    //     };
+        // needs to be called with or without CAN id, just dont put in the argument
+        void GetEncoder(int CAN = 999)  
+        {
+          // Get real relative encoders
+          this->encoder = std::make_unique<rev::SparkRelativeEncoder>(this->motor->GetEncoder());
+          if (CAN != 999)
+          {
+            this->AbsEncoder = std::make_unique<ctre::phoenix6::hardware::CANcoder>(CAN, "rio");
+          }
+        };
+        // Configs
+        void Config(float P, float I, float D, int max_amperage)  
+        {
+          // Set current limit
+          this->motor->SetSmartCurrentLimit(max_amperage);
 
-    //     // Speed in rotations per minute
-    //     double GetSpeed()  
-    //     {
-    //       return encoder->GetVelocity();
-    //     };
+          // Turn on brake coast mode, snappier
+          this->motor->SetIdleMode(rev::CANSparkMax::IdleMode::kBrake);
 
-    //     /// @brief Gets the angle
-    //     /// @return In degrees, must be in ANGLE mode to get angle, otherwise it just gives the distance in angles
-    //     double GetMotorPosition()  
-    //     {
-    //       return encoder->GetPosition() * 360;
-    //     };
+          // Swerve wheel PID contrllers
+          this->PIDController = std::make_unique<rev::SparkPIDController>(this->motor->GetPIDController());
+          this->PIDController->SetP(P);
+          this->PIDController->SetI(I);
+          this->PIDController->SetD(D);
 
-    //   private:
-    //     rev::CANSparkMax*                 motor;
-    //     rev::SparkRelativeEncoder*        encoder;
-    //     rev::SparkPIDController*          PIDController;
-    //     ctre::phoenix::sensors::CANCoder* AbsEncoder;
-    //     motors::motor_type mode;
-    // };
+          // Burn flash everytime
+          this->motor->BurnFlash();
+        };
+
+        // Multi-purpose, Angle/Drive
+        void Set(double input)  
+        {
+          switch (mode)
+          {
+            case DRIVE:
+              this->motor->Set(input);
+            case ANGLE:
+              this->PIDController->SetReference(input * 21, rev::CANSparkMaxLowLevel::ControlType::kPosition);
+          }
+        };
+        //
+        void SnapZero()
+        {
+          // get pos from encoder, conv to deg, conv to encoder rotations
+          this->encoder->SetPosition((AbsEncoder->GetAbsolutePosition().GetValue().value() / 360 * 21));
+        };
+
+        // Speed in rotations per minute
+        double GetSpeed()  
+        {
+          return encoder->GetVelocity();
+        };
+
+        /// @brief Gets the angle
+        /// @return In degrees, must be in ANGLE mode to get angle, otherwise it just gives the distance in angles
+        double GetMotorPosition()  
+        {
+          return encoder->GetPosition() * 360;
+        };
+
+      private:
+        std::unique_ptr<rev::CANSparkMax>                   motor;
+        std::unique_ptr<rev::SparkRelativeEncoder>          encoder;
+        std::unique_ptr<rev::SparkPIDController>            PIDController;
+        std::unique_ptr<ctre::phoenix6::hardware::CANcoder> AbsEncoder;
+        motors::motor_type mode;
+    };
 
   } // motors
 

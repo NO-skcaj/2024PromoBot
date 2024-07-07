@@ -35,8 +35,8 @@ class Differential
     private:
         // *** DRIVE MOTORS *** //
 
-        motors::TalonFX     d_leftMotor;
-        motors::TalonFX     d_rightMotor;
+        motors::CANSparkMax     d_leftMotor;
+        motors::CANSparkMax     d_rightMotor;
 
         frc::DifferentialDrive driveController{
             [&](double output) { d_leftMotor.Set(output); },

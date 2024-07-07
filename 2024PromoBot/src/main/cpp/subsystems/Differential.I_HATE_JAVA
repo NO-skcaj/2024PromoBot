@@ -4,8 +4,8 @@ Differential::Differential(hardware::gyro::navx* gyro)
 {   
     this->Gyro = gyro;
 
-    this->d_leftMotor.AddMotor(drive::LEFT_CAN, hardware::motors::motor_type::DRIVE);
-    this->d_rightMotor.AddMotor(drive::LEFT_CAN, hardware::motors::motor_type::DRIVE);
+    this->d_leftMotor.AddMotor( drive::LEFT_CAN, hardware::motors::motor_type::DRIVE, true);
+    this->d_rightMotor.AddMotor(drive::LEFT_CAN, hardware::motors::motor_type::DRIVE, true);
 
     this->d_leftMotor.Config(drive::DRIVE_P, 
                              drive::DRIVE_I, 
